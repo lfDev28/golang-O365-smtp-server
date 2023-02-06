@@ -1,4 +1,5 @@
 Send emails in go-lang with an added html template. Clone this repo and run the build.sh command. Setup a lambda function with a HTTP Gateway to utilise this function. Ensure you add your environment variables where shown in main.go.
+This repo was originally cloned from toshvelaga on github. Modifications were made for my own use-case.
 
 ```
 git clone https://github.com/lfDev28/golang-O365-smtp-server
