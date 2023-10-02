@@ -18,10 +18,11 @@ import (
 )
 
 type Request struct {
-	Sender   string `json:"sender"`
-	Receiver string `json:"receiver"`
-	Message  string `json:"message"`
-	URL      string `json:"url"`
+	Sender      string `json:"sender"`
+	Receiver    string `json:"receiver"`
+	Message     string `json:"message"`
+	URL         string `json:"url"`
+	SenderEmail string `json:"senderEmail"`
 }
 
 type loginAuth struct {
@@ -68,7 +69,7 @@ func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 			StatusCode: 500,
 		}, nil
 	}
-	if req.Sender == "" || req.Receiver == "" || req.Message == "" || req.URL == "" {
+	if req.Sender == "" || req.Receiver == "" || req.Message == "" || req.URL == "" || req.SenderEmail == "" {
 		return events.APIGatewayProxyResponse{
 			Body:       "Missing fields",
 			StatusCode: 400,
@@ -80,6 +81,10 @@ func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 
 	to := []string{
 		req.Receiver,
+	}
+
+	cc := []string{
+		req.SenderEmail,
 	}
 
 	smtpHost := "smtp.office365.com"
@@ -114,7 +119,7 @@ func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	var emailBody bytes.Buffer
 
 	mimeHeaders := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
-	emailBody.Write([]byte(fmt.Sprintf("Subject: Tecsim Notification \n%s\n\n", mimeHeaders)))
+	emailBody.Write([]byte(fmt.Sprintf("Subject: Tecsim Notification \nCc: %s\n%s\n\n", strings.Join(cc, ","), mimeHeaders)))
 
 	t.Execute(&emailBody, struct {
 		Sender  string
@@ -126,8 +131,10 @@ func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 		URL:     req.URL,
 	})
 
+	recipients := append(to, cc...)
+
 	// Sending email.
-	err = smtp.SendMail(smtpHost+":"+smtpPort, auth, from, to, emailBody.Bytes())
+	err = smtp.SendMail(smtpHost+":"+smtpPort, auth, from, recipients, emailBody.Bytes())
 	if err != nil {
 		fmt.Println(err)
 		return events.APIGatewayProxyResponse{
